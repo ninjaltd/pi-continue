@@ -26,6 +26,10 @@ const PROMPT_OVERRIDE_POLICIES = new Set<PromptOverridePolicy>([
 ]);
 const WRITE_MODES = new Set<WriteMode>(["always", "off"]);
 const DEFAULT_SYNTHESIS_TIMEOUT_MS = 180_000;
+<<<<<<< HEAD
+=======
+const DEFAULT_SYNTHESIS_MAX_RETRIES = 0;
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 const mutationQueues = new Map<string, Promise<void>>();
 
 async function withConfigMutationQueue(path: string, work: () => Promise<void>): Promise<void> {
@@ -45,6 +49,10 @@ export const DEFAULT_CONTINUE_CONFIG: ContinuationConfig = {
 	reasoning: "inherit",
 	historyMaxTokens: null,
 	synthesisTimeoutMs: DEFAULT_SYNTHESIS_TIMEOUT_MS,
+<<<<<<< HEAD
+=======
+	synthesisMaxRetries: DEFAULT_SYNTHESIS_MAX_RETRIES,
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 	continuationArtifactMode: "always",
 	agentGuidePath: "AGENTS.md",
 	agentGuideSyncMode: "off",
@@ -62,6 +70,10 @@ interface PartialContinuationConfig {
 	reasoning?: string;
 	historyMaxTokens?: number | null;
 	synthesisTimeoutMs?: number;
+<<<<<<< HEAD
+=======
+	synthesisMaxRetries?: number;
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 	continuationArtifactMode?: string;
 	agentGuidePath?: string;
 	agentGuideSyncMode?: string;
@@ -124,6 +136,11 @@ function parsePartialConfig(value: unknown): PartialContinuationConfig {
 	if (historyMaxTokens !== undefined) result.historyMaxTokens = historyMaxTokens;
 	const synthesisTimeoutMs = asNumber(value.synthesisTimeoutMs);
 	if (synthesisTimeoutMs !== undefined) result.synthesisTimeoutMs = synthesisTimeoutMs;
+<<<<<<< HEAD
+=======
+	const synthesisMaxRetries = asNumber(value.synthesisMaxRetries);
+	if (synthesisMaxRetries !== undefined) result.synthesisMaxRetries = Math.max(0, Math.min(5, Math.floor(synthesisMaxRetries)));
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 	const continuationArtifactMode = asString(value.continuationArtifactMode);
 	if (continuationArtifactMode !== undefined) result.continuationArtifactMode = continuationArtifactMode;
 	const agentGuidePath = asString(value.agentGuidePath);
@@ -199,6 +216,10 @@ function normalizeConfig(partial: PartialContinuationConfig): ContinuationConfig
 		reasoning: normalizeReasoning(partial.reasoning),
 		historyMaxTokens: normalizeTokenOverride(partial.historyMaxTokens),
 		synthesisTimeoutMs: normalizeTokenOverride(partial.synthesisTimeoutMs) ?? DEFAULT_CONTINUE_CONFIG.synthesisTimeoutMs,
+<<<<<<< HEAD
+=======
+		synthesisMaxRetries: typeof partial.synthesisMaxRetries === "number" ? Math.max(0, Math.min(5, Math.floor(partial.synthesisMaxRetries))) : DEFAULT_CONTINUE_CONFIG.synthesisMaxRetries,
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 		continuationArtifactMode: normalizeWriteMode(partial.continuationArtifactMode, DEFAULT_CONTINUE_CONFIG.continuationArtifactMode),
 		agentGuidePath: normalizePath(partial.agentGuidePath, DEFAULT_CONTINUE_CONFIG.agentGuidePath),
 		agentGuideSyncMode: normalizeWriteMode(partial.agentGuideSyncMode, DEFAULT_CONTINUE_CONFIG.agentGuideSyncMode),

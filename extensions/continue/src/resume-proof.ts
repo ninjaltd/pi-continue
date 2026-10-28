@@ -195,7 +195,12 @@ export function markContinuationCompactionComplete(ctx: ExtensionContext, runtim
 }
 
 export function verifyContinuationCompactionProof(ctx: ExtensionContext, runtime: ResumeProofRuntimeState, eventId: string, compactionEntryId: string): boolean {
+<<<<<<< HEAD
 	if (!markContinuationCompactionProofVerified(runtime, eventId, compactionEntryId)) return false;
+=======
+	const verifiedOk = markContinuationCompactionProofVerified(runtime, eventId, compactionEntryId);
+	if (!verifiedOk) return false;
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 	const pending = runtime.pendingResumeDispatch;
 	if (!pending || pending.eventId !== eventId) {
 		clearCompactionProofTimeout(runtime);

@@ -148,11 +148,37 @@ export function shouldEvaluateMidRunContext(messages: unknown[]): boolean {
 	return endsWithCompleteToolResultBatch(messages);
 }
 
+<<<<<<< HEAD
+=======
+// pi-continue mirrors Pi core's own reserveTokens/keepRecentTokens so its
+// guard fires at the point core would otherwise auto-compact. Without a
+// margin, both fire at the identical token count and race: core's native
+// _checkCompaction runs synchronously right after each assistant message
+// (before the "context" hook this guard evaluates on even gets a turn), so
+// it frequently wins, and the two compaction attempts collide over the same
+// session, aborting each other's synthesis mid-request. Firing a bit earlier
+// keeps this guard reliably ahead of core's native check instead of tied
+// with it.
+const NATIVE_COMPACTION_RACE_MARGIN_RATIO = 0.02;
+const NATIVE_COMPACTION_RACE_MARGIN_MIN_TOKENS = 512;
+const NATIVE_COMPACTION_RACE_MARGIN_MAX_TOKENS = 4096;
+
+function nativeCompactionRaceMargin(contextWindow: number): number {
+	const scaled = Math.round(contextWindow * NATIVE_COMPACTION_RACE_MARGIN_RATIO);
+	return Math.min(NATIVE_COMPACTION_RACE_MARGIN_MAX_TOKENS, Math.max(NATIVE_COMPACTION_RACE_MARGIN_MIN_TOKENS, scaled));
+}
+
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 /** Decide whether the package must stop before Pi sends another provider request. */
 export function decideMidRunGuardTrigger(input: MidRunGuardDecisionInput): MidRunGuardTrigger | undefined {
 	if (!input.config.enabled || !input.config.midRunGuardEnabled || !input.piSettings.enabled) return undefined;
 	if (!hasUsableContextWindow(input.contextWindow, input.piSettings.reserveTokens)) return undefined;
+<<<<<<< HEAD
 	const thresholdTokens = input.contextWindow - input.piSettings.reserveTokens;
+=======
+	const nativeThresholdTokens = input.contextWindow - input.piSettings.reserveTokens;
+	const thresholdTokens = nativeThresholdTokens - nativeCompactionRaceMargin(input.contextWindow);
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 	if (input.estimate.tokens <= thresholdTokens) return undefined;
 	return {
 		estimatedTokens: input.estimate.tokens,
@@ -173,10 +199,20 @@ export async function runMidRunGuard(
 	messages: unknown[],
 	onContinuationFailed?: (eventId: string) => void,
 ): Promise<void> {
+<<<<<<< HEAD
 	if (!shouldEvaluateMidRunContext(messages) || !ctx.model) return;
 	const initialProjectContext = await resolveProjectContext(pi, ctx.cwd, ctx.sessionManager.getSessionId());
 	const config = loadContinuationConfig(initialProjectContext.projectRoot);
 	if (!config.enabled || !config.midRunGuardEnabled) return;
+=======
+	const shouldEval = shouldEvaluateMidRunContext(messages);
+	if (!shouldEval || !ctx.model) return;
+	const initialProjectContext = await resolveProjectContext(pi, ctx.cwd, ctx.sessionManager.getSessionId());
+	const config = loadContinuationConfig(initialProjectContext.projectRoot);
+	if (!config.enabled || !config.midRunGuardEnabled) {
+		return;
+	}
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 	const piSettings = readEffectivePiCompactionSettings(initialProjectContext.projectRoot);
 	const internals = await loadPiInternals();
 	const estimate = internals.estimateContextTokens(messages);

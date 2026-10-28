@@ -18,6 +18,10 @@ export interface ContinuationConfig {
 	reasoning: ContinuationReasoning;
 	historyMaxTokens: number | null;
 	synthesisTimeoutMs: number;
+<<<<<<< HEAD
+=======
+	synthesisMaxRetries: number;
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 	continuationArtifactMode: WriteMode;
 	agentGuidePath: string;
 	agentGuideSyncMode: WriteMode;

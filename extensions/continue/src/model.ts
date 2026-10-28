@@ -93,8 +93,21 @@ export async function runPromptPass(
 	let httpStatus: number | undefined;
 	let response: Awaited<ReturnType<typeof completeSimple>>;
 	const promptPassAbort = createPromptPassAbortSignal(signal, config.synthesisTimeoutMs);
+<<<<<<< HEAD
 	try {
 		response = await completeSimple(
+=======
+	// Prefer ctx.completeSimple over pi-ai's completeSimple directly: it routes
+	// this out-of-band synthesis call through other extensions'
+	// before_provider_request/before_provider_headers hooks, which never fire
+	// for a raw pi-ai completeSimple call since nothing outside the main agent
+	// loop's own request path invokes them otherwise. Only present on newer
+	// pi-coding-agent versions (our peerDependency floor is 0.74.0), so fall
+	// back to the plain SDK call when it's not there.
+	const request = (ctx as { completeSimple?: typeof completeSimple }).completeSimple ?? completeSimple;
+	try {
+		response = await request(
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 			model,
 			{
 				systemPrompt: prompt.systemPrompt,

@@ -1,7 +1,11 @@
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, join, normalize, relative, resolve, sep } from "node:path";
+<<<<<<< HEAD
 import type { ResolvedProjectContext } from "./types.ts";
+=======
+import type { HistoryOutputBudget, PromptPassUsageTelemetry, ResolvedProjectContext } from "./types.ts";
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 
 interface ExecApi {
 	exec(command: string, args: string[], options?: { cwd?: string; timeout?: number }): Promise<{
@@ -71,6 +75,80 @@ export function buildContinuationArtifactPath(projectRoot: string, sessionId: st
 	return join(projectRoot, ".pi", "continue", `${encodeSessionIdForArtifactPath(sessionId)}.md`);
 }
 
+<<<<<<< HEAD
+=======
+export interface SynthesisFailureArtifactDetails {
+	pass: "history";
+	code: string;
+	requestedModel?: string;
+	responseModel?: string;
+	httpStatus?: number;
+	usage?: PromptPassUsageTelemetry;
+	outputBudget?: HistoryOutputBudget;
+	rawText: string;
+}
+
+/** Filesystem-safe timestamp for a diagnostic filename: 2026-09-01T08-53-58-123Z. */
+function sanitizeTimestampForFilename(timestamp: Date): string {
+	return timestamp.toISOString().replace(/[:.]/g, "-");
+}
+
+export function buildSynthesisFailureArtifactPath(projectRoot: string, timestamp: Date, code: string): string {
+	return join(projectRoot, ".pi", "continue", "failures", `${sanitizeTimestampForFilename(timestamp)}-${code}.md`);
+}
+
+function renderSynthesisFailureArtifactHeader(timestamp: Date, details: SynthesisFailureArtifactDetails): string {
+	const lines = [
+		"# pi-continue synthesis failure",
+		"",
+		"The history pass produced a response that failed to parse or validate.",
+		"Raw model output follows the `---` marker below, unmodified.",
+		"",
+		`- timestamp: ${timestamp.toISOString()}`,
+		`- pass: ${details.pass}`,
+		`- code: ${details.code}`,
+	];
+	if (details.requestedModel !== undefined) lines.push(`- requested model: ${details.requestedModel}`);
+	if (details.responseModel !== undefined) lines.push(`- response model: ${details.responseModel}`);
+	if (details.httpStatus !== undefined) lines.push(`- HTTP status: ${details.httpStatus}`);
+	if (details.usage) {
+		lines.push(
+			`- usage: input=${details.usage.input}, output=${details.usage.output}, total=${details.usage.totalTokens}`,
+		);
+	}
+	if (details.outputBudget) {
+		const budget = details.outputBudget;
+		lines.push(
+			`- output budget: requested=${budget.requestedTokens}, effective=${budget.effectiveTokens}, modelMax=${budget.modelMaxTokens ?? "unknown"}, clampedByModel=${budget.clampedByModel}`,
+		);
+	}
+	lines.push("", "---", "");
+	return lines.join("\n");
+}
+
+/**
+ * Best-effort diagnostic capture for a synthesis pass that failed parsing/validation.
+ * Writes the raw model output alongside request telemetry so a failure can be inspected
+ * after the fact instead of vanishing — parseHistoryArtifacts' recovery heuristics only
+ * cover known-good shapes, so an unrecovered failure is otherwise unobservable state.
+ * Never throws: a write failure here must not mask or replace the original synthesis error.
+ */
+export async function writeSynthesisFailureArtifact(
+	projectRoot: string,
+	details: SynthesisFailureArtifactDetails,
+): Promise<string | undefined> {
+	const timestamp = new Date();
+	const path = buildSynthesisFailureArtifactPath(projectRoot, timestamp, details.code);
+	try {
+		await mkdir(dirname(path), { recursive: true });
+		await writeFile(path, `${renderSynthesisFailureArtifactHeader(timestamp, details)}${details.rawText}\n`, "utf8");
+		return path;
+	} catch {
+		return undefined;
+	}
+}
+
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 /** Resolve the project root, package-owned continuation artifact path, and configured agent guide. */
 export async function resolveProjectContext(
 	pi: ExecApi,

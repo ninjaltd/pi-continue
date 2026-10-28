@@ -38,6 +38,19 @@ export type ContinuationRequestSource = ContinuationEventSource;
 export interface ContinuationRuntimeState extends ResumeProofRuntimeState {
 	latestLedger: ContinuationLedgerSnapshot | undefined;
 	lastNoCompactableGuardKey: string | undefined;
+<<<<<<< HEAD
+=======
+	/**
+	 * Resolves once the in-flight ctx.compact() call (including pi-continue's
+	 * own detached synthesis request) has settled. ctx.compact() runs detached
+	 * from session.prompt(), so callers like print-mode's finally block can
+	 * dispose the session (aborting _compactionAbortController) while the
+	 * synthesis request is still in flight. The session_shutdown handler
+	 * awaits this before letting core proceed to session.dispose(), so a
+	 * pending handoff gets a chance to finish instead of being aborted mid-request.
+	 */
+	activeCompactionSettle: Promise<void> | undefined;
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 }
 
 export interface ContinuationRequest {
@@ -112,6 +125,10 @@ export function createContinuationRuntimeState(): ContinuationRuntimeState {
 		latestEvent: undefined,
 		activeEventId: undefined,
 		nextEventSequence: 0,
+<<<<<<< HEAD
+=======
+		activeCompactionSettle: undefined,
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 	};
 }
 
@@ -235,7 +252,17 @@ export function startContinuationCompaction(
 		options.continueAfterComplete ? "pending" : "not-requested",
 	);
 	beginWorkingVisuals(ctx, runtime, event.id, "pi-continue saving handoff");
+<<<<<<< HEAD
 	if (options.abortActiveRun) ctx.abort();
+=======
+	// Do not call ctx.abort() here: ctx.compact() below already performs an
+	// internally-awaited abort as its first step (session.compact() -> await
+	// this.abort()). Calling ctx.abort() here as well races a second,
+	// unawaited session.abort() against that internal one, which can append
+	// a stray aborted assistant entry to the branch and corrupt the entries
+	// snapshot the real prepareCompaction() call sees, producing spurious
+	// "This operation was aborted" / "Nothing to compact" failures.
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 	const label = sourceLabel(options.source);
 	const triggerText = options.trigger ? ` (${describeGuardTrigger(options.trigger)})` : "";
 	notify(ctx, `${label}: saving handoff${triggerText}.`, "info");
@@ -244,9 +271,20 @@ export function startContinuationCompaction(
 		options.trigger ? buildGuardInstructions(options.trigger) : undefined,
 	]);
 	let compactionCallbackSettled = false;
+<<<<<<< HEAD
 	function claimCompactionCallback(): boolean {
 		if (compactionCallbackSettled) return false;
 		compactionCallbackSettled = true;
+=======
+	let resolveCompactionSettle: (() => void) | undefined;
+	runtime.activeCompactionSettle = new Promise<void>((resolve) => {
+		resolveCompactionSettle = resolve;
+	});
+	function claimCompactionCallback(): boolean {
+		if (compactionCallbackSettled) return false;
+		compactionCallbackSettled = true;
+		resolveCompactionSettle?.();
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 		return isActiveRunningContinuationEvent(runtime, event.id);
 	}
 	if (options.continueAfterComplete) {
@@ -272,10 +310,29 @@ export function startContinuationCompaction(
 		notify(ctx, `${label}: handoff failed: ${reason}`, "error");
 	}
 	try {
+<<<<<<< HEAD
 		ctx.compact({
 			customInstructions,
 			onComplete: () => {
 				if (!claimCompactionCallback()) return;
+=======
+		// `cancellable` is a real field on CompactOptions as of the pi-coding-agent
+		// version we actually run against (>=0.84.0), but our pinned devDependency
+		// floor (^0.74.0, used only for local type-checking) predates it -- hence the
+		// widened inline type rather than a plain object literal.
+		const compactOptions: Parameters<typeof ctx.compact>[0] & { cancellable?: boolean } = {
+			customInstructions,
+			// This is an unattended background handoff, not something the user just asked
+			// for in the moment (unlike /compact) — without this, core's TUI silently
+			// repoints Escape to abort it for the whole compaction, and a stray Escape
+			// press (a generic stop/dismiss reflex everywhere else in the UI) kills the
+			// synthesis mid-flight with no warning that it was ever bound to this.
+			cancellable: false,
+			onComplete: () => {
+				if (!claimCompactionCallback()) {
+					return;
+				}
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 				runtime.compactionRunning = false;
 				runtime.guardFailureKey = undefined;
 				if (options.continueAfterComplete) {
@@ -286,12 +343,23 @@ export function startContinuationCompaction(
 				settleWorkingVisuals(ctx, runtime, event.id);
 				notify(ctx, `${label}: handoff saved.`, "info");
 			},
+<<<<<<< HEAD
 			onError: () => {
 				if (!claimCompactionCallback()) return;
 				failCompaction(compactionFailureReason(runtime, event.id));
 			},
 		});
 	} catch {
+=======
+			onError: (err) => {
+				if (!claimCompactionCallback()) return;
+				failCompaction(compactionFailureReason(runtime, event.id));
+			},
+		};
+		ctx.compact(compactOptions);
+	} catch {
+		resolveCompactionSettle?.();
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 		failCompaction(compactionFailureReason(runtime, event.id));
 		return false;
 	}

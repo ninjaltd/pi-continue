@@ -148,6 +148,10 @@ const CONFIG_KEYS = [
 	"summarizerModel",
 	"reasoning",
 	"historyMaxTokens",
+<<<<<<< HEAD
+=======
+	"synthesisMaxRetries",
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 	"synthesisTimeoutMs",
 	"continuationArtifactMode",
 	"agentGuidePath",
@@ -203,7 +207,12 @@ export async function runSettingsDialog(pi: ExtensionAPI, ctx: ExtensionCommandC
 			`Handoff model: ${config.summarizerModel}`,
 			`Reasoning: ${config.reasoning}`,
 			`History output budget: ${config.historyMaxTokens ?? "Pi default"}`,
+<<<<<<< HEAD
 			`Synthesis timeout: ${config.synthesisTimeoutMs} ms`,
+=======
+			`synthesisMaxRetries: ${config.synthesisMaxRetries}`,
+		`Synthesis timeout: ${config.synthesisTimeoutMs} ms`,
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 			`Continuation artifact: ${config.continuationArtifactMode}`,
 			`Agent guide path: ${config.agentGuidePath}`,
 			`Agent guide updates: ${config.agentGuideSyncMode} (full replacement only)`,
@@ -252,6 +261,17 @@ export async function runSettingsDialog(pi: ExtensionAPI, ctx: ExtensionCommandC
 			});
 			continue;
 		}
+<<<<<<< HEAD
+=======
+		if (selected.startsWith("synthesisMaxRetries:")) {
+			config = await updateSetting(scope, projectContext.projectRoot, config, async (current) => {
+				const next = await choosePositiveInteger(ctx, "Synthesis max retries (0-5)", current.synthesisMaxRetries ?? 0);
+				if (next === undefined) return undefined;
+				return { ...current, synthesisMaxRetries: Math.max(0, Math.min(5, Math.floor(next))) };
+			});
+			continue;
+		}
+>>>>>>> 063562d (feat(continue): retry synthesis on parse/shape failures with stricter repair prompts)
 		if (selected.startsWith("Synthesis timeout:")) {
 			config = await updateSetting(scope, projectContext.projectRoot, config, async (current) => {
 				const next = await choosePositiveInteger(ctx, "Synthesis timeout in milliseconds", current.synthesisTimeoutMs);
